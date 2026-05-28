@@ -48,7 +48,7 @@ app.use(
     title: 'Interactive API Portal',
     logoText: 'AP',
     logoTitle: 'MyAPI Docs',
-    // Options
+    // Optional: Allowed environments. Defaults to ['development', 'test'] to secure production
     enabledEnvironments: ['development', 'test', 'staging'],
   })
 );
@@ -76,6 +76,8 @@ async function bootstrap() {
       title: 'Code API Portal',
       logoText: 'iD',
       logoTitle: 'Code Docs',
+      // Optional 
+      // Default variables that are global (others are dynamically loaded from .http files!)
       envVariables: {
         baseUrl: 'http://localhost:5000/api/v1',
         authToken: '',
@@ -103,8 +105,8 @@ Configures and returns the PointHTTP Express middleware.
 | `logoText` | `string` | `'PH'` | Logo icon text inside the sidebar. |
 | `logoTitle` | `string` | `'PointHTTP'` | Logo title inside the sidebar header. |
 | `customCss` | `string` | `''` | Custom CSS styles injected into the rendered HTML layout. |
-| `enabledEnvironments`| `string[]` | `['development', 'test']`| Environments where this playground is allowed to render (matched against `process.env.NODE_ENV`). |
-| `envVariables` | `Record<string, string>`| `{}` | Default global environment variables preloaded in the editor. |
+| `enabledEnvironments`| `string[]` | `['development', 'test']`| Optional list of environments allowed to render the playground (matches against `process.env.NODE_ENV`). If not set, it defaults to `['development', 'test']` to ensure security and prevent accidental exposure in production! When disabled, the route falls through silently to normal `next()` handlers (so it looks like the route doesn't exist). |
+| `envVariables` | `Record<string, string>`| `{}` | Optional default environment variables. (Note: Variables defined in `.http` files via `@name = value` are also automatically extracted and preloaded here!) |
 | `customAuth` | `(req, res) => boolean \| Promise<boolean>` | `undefined` | Callback hook to authorize requests before rendering the portal. |
 
 ---
@@ -118,7 +120,7 @@ PointHTTP fully supports the **VS Code REST Client standard syntax**:
 # This file handles login and token retrieval.
 
 @baseUrl = http://localhost:3000/api/v1
-@email = developer@example.com
+@orderId = 4237e635-d2c1-4d33-a24f-05f400d0b23f
 
 ### Login Request
 # Authenticates user credentials
@@ -126,12 +128,24 @@ POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "{{email}}",
+  "email": "dev@example.com",
   "password": "SecurePassword123"
 }
 
 ### Get User Profile
 GET {{baseUrl}}/users/profile
+Authorization: Bearer {{authToken}}
+
+### Get Order
+GET {{baseUrl}}/orders/{{orderId}}
+Authorization: Bearer {{authToken}}
+
+### Get Orders List
+# Fetches a paginated list of orders (supports multiline query strings!)
+GET {{baseUrl}}/orders
+  ?page=1
+  &limit=10
+  &status=pending
 Authorization: Bearer {{authToken}}
 ```
 
