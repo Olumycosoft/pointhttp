@@ -1,0 +1,44 @@
+{
+  "name": "pointhttp",
+  "version": "1.0.0",
+  "description": "An interactive, browser-based API playground and REST client for NestJS and Node.js applications.",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build-assets": "node build-assets",
+    "build": "npm run build-assets && tsup",
+    "dev": "tsup --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "nestjs",
+    "http",
+    "rest",
+    "client",
+    "playground",
+    "swagger",
+    "api-documentation",
+    "interactive-docs",
+    "rest-client"
+  ],
+  "author": "olumycosoft",
+  "peerDependencies": {},
+  "devDependencies": {
+    "esbuild": "^0.20.0",
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

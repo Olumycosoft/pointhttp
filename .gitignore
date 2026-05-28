@@ -1,0 +1,22 @@
+# Dependency Directories
+node_modules/
+
+# Build Outputs
+dist/
+src/core/scripts/script.generated.ts
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

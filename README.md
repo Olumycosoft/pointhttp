@@ -1,0 +1,162 @@
+# PointHTTP 🚀
+
+> **A premium, fully interactive browser-based REST client playground & API documentation portal for Node.js.** 
+
+PointHTTP automatically converts your `.http` (VS Code REST Client standard) files into a stunning, dark-mode interactive playground. Mount it as a middleware in Express or NestJS to let developers test, execute, and document APIs directly inside the browser with zero third-party dependencies!
+
+---
+
+## ✨ Features
+
+- **📂 Live Folder & File Navigation:** Sleek sidebar grouping all `.http` modular documents.
+- **⚡ In-Browser Execution:** Run REST requests directly from the interface using the native browser `fetch` API.
+- **🔐 Environment Variables Panel:** Manage dynamic environment variables (like `{{baseUrl}}`, `{{authToken}}`) with a live-syncing grid editor.
+- **📝 Live Request Customization:** Customize request query parameters and body payloads dynamically in the UI before execution.
+- **📦 Collapsible Interactive JSON Tree:** Inspect API response structures easily with expandable/collapsible JSON nodes.
+- **💾 Local Storage Snapshots:** Save, manage, and recall historic response snapshots directly in the browser.
+- **📋 Developer Quick Actions:** One-click copy JSON responses, download payloads, or copy ready-to-run `cURL` commands.
+- **🔒 Production Grade Security:**
+  - **No SSRF:** Requests are dispatched client-side in the user's browser. Your server is completely insulated.
+  - **XSS Sanitized:** Comprehensive sanitization of values, variables, and tree keys protects against malicious HTML injections.
+  - **Auth Gates:** Inject custom authentication gate callbacks (e.g. JWT verification) before serving the playground.
+
+---
+
+## 📦 Installation
+
+```bash
+npm install pointhttp
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. In Express
+
+```typescript
+import express from 'express';
+import { playground } from 'pointhttp';
+import path from 'path';
+
+const app = express();
+
+app.use(
+  '/docs/api',
+  playground({
+    modulesDir: path.join(process.cwd(), 'src/modules'),
+    title: 'Interactive API Portal',
+    logoText: 'AP',
+    logoTitle: 'MyAPI Docs',
+    // Options
+    enabledEnvironments: ['development', 'test', 'staging'],
+  })
+);
+
+app.listen(3000);
+```
+
+### 2. In NestJS
+
+You can easily mount the Express middleware onto your NestJS app in `main.ts`:
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { playground } from 'pointhttp';
+import * as path from 'path';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.use(
+    '/docs/http',
+    playground({
+      modulesDir: path.join(process.cwd(), 'src/modules'),
+      title: 'Code API Portal',
+      logoText: 'iD',
+      logoTitle: 'Code Docs',
+      envVariables: {
+        baseUrl: 'http://localhost:5000/api/v1',
+        authToken: '',
+      }
+    })
+  );
+
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+---
+
+## 🛠️ API Reference
+
+### `playground(options: PointHttpOptions)`
+
+Configures and returns the PointHTTP Express middleware.
+
+| Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `modulesDir` | `string \| string[]` | `['src']` | Target directories to scan recursively for `.http` documents. |
+| `title` | `string` | `'PointHTTP Playground'` | Document title displayed in the browser tab and page header. |
+| `logoText` | `string` | `'PH'` | Logo icon text inside the sidebar. |
+| `logoTitle` | `string` | `'PointHTTP'` | Logo title inside the sidebar header. |
+| `customCss` | `string` | `''` | Custom CSS styles injected into the rendered HTML layout. |
+| `enabledEnvironments`| `string[]` | `['development', 'test']`| Environments where this playground is allowed to render (matched against `process.env.NODE_ENV`). |
+| `envVariables` | `Record<string, string>`| `{}` | Default global environment variables preloaded in the editor. |
+| `customAuth` | `(req, res) => boolean \| Promise<boolean>` | `undefined` | Callback hook to authorize requests before rendering the portal. |
+
+---
+
+## 📝 `.http` File Syntax Reference
+
+PointHTTP fully supports the **VS Code REST Client standard syntax**:
+
+```http
+# @name Authentication API
+# This file handles login and token retrieval.
+
+@baseUrl = http://localhost:3000/api/v1
+@email = developer@example.com
+
+### Login Request
+# Authenticates user credentials
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "SecurePassword123"
+}
+
+### Get User Profile
+GET {{baseUrl}}/users/profile
+Authorization: Bearer {{authToken}}
+```
+
+---
+
+## 🛡️ Security Best Practices
+
+### Custom Auth Gates
+Always protect your staging/production environments by attaching a `customAuth` check:
+
+```typescript
+playground({
+  customAuth: async (req, res) => {
+    // Perform authentication checks
+    const sessionToken = req.cookies?.session;
+    if (!sessionToken || !isValidSession(sessionToken)) {
+      return false; // Automatically returns 403 Forbidden
+    }
+    return true; // Renders the portal
+  }
+})
+```
+
+---
+
+## 📄 License
+
+MIT © olumycosoft
