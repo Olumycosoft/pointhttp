@@ -2,6 +2,8 @@
 
 > **A premium, fully interactive browser-based REST client playground & API documentation portal for Node.js.** 
 
+Built and maintained with ❤️ by **[Olumycosoft](https://github.com/Olumycosoft)**.
+
 PointHTTP automatically converts your `.http` (VS Code REST Client standard) files into a stunning, dark-mode interactive playground. Mount it as a middleware in Express or NestJS to let developers test, execute, and document APIs directly inside the browser with zero third-party dependencies!
 
 ---
@@ -223,4 +225,4 @@ playground({
 
 ## 📄 License
 
-MIT © olumycosoft
+MIT © **[Olumycosoft](https://github.com/Olumycosoft)**
