@@ -34,6 +34,22 @@ npm install pointhttp
 
 ## 🚀 Quick Start
 
+### 0. Zero-Config Setup ⚡
+
+If you want to get up and running instantly with no parameters, simply mount the playground middleware with zero configuration. It will automatically scan your project directories recursively for `.http` documents and load default brand styling out-of-the-box:
+
+```typescript
+import express from 'express';
+import { playground } from 'pointhttp';
+
+const app = express();
+
+// Just mount it - scans directories & serves automatically!
+app.use('/docs/http', playground());
+
+app.listen(3000);
+```
+
 ### 1. In Express
 
 ```typescript
