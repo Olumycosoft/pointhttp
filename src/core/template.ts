@@ -14,7 +14,6 @@ function escapeHtml(str: string): string {
 
 export function getHtmlTemplate(options: PointHttpOptions, files: Array<{ relativePath: string; content: string }>): string {
   const title = escapeHtml(options.title || 'PointHTTP Playground');
-  const logoText = escapeHtml(options.logoText || 'PH');
   const logoTitle = escapeHtml(options.logoTitle || 'PointHTTP');
   const customCss = options.customCss || '';
   const defaultEnvVars = JSON.stringify(options.envVariables || {});
@@ -80,7 +79,27 @@ export function getHtmlTemplate(options: PointHttpOptions, files: Array<{ relati
 
   <div class="sidebar">
     <div class="logo-area">
-      <div class="logo-icon">${logoText}</div>
+      <svg class="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <defs>
+          <radialGradient id="space-grad-lib" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+            <stop offset="0%" stop-color="#3b82f6" />
+            <stop offset="60%" stop-color="#1e3a8a" />
+            <stop offset="100%" stop-color="#0f172a" />
+          </radialGradient>
+          <linearGradient id="glow-grad-lib" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#60a5fa" />
+            <stop offset="50%" stop-color="#3b82f6" />
+            <stop offset="100%" stop-color="#1d4ed8" />
+          </linearGradient>
+        </defs>
+        <circle cx="250" cy="250" r="230" fill="url(#space-grad-lib)" stroke="#1e2942" stroke-width="4" />
+        <circle cx="250" cy="250" r="226" fill="none" stroke="#2563eb" stroke-width="2" stroke-opacity="0.4" />
+        <g transform="translate(110, 120)">
+          <path d="M 0,0 L 90,0 C 130,0 150,20 150,55 C 150,90 130,110 90,110 L 40,110 L 40,260 L 0,260 Z M 40,40 L 40,75 L 85,75 C 98,75 110,70 110,57 C 110,45 98,40 85,40 Z" fill="#ffffff" />
+          <rect x="180" y="0" width="40" height="260" rx="6" fill="url(#glow-grad-lib)" />
+          <path d="M 220,100 L 280,100 L 280,30 L 360,130 L 280,230 L 280,160 L 220,160 Z" fill="#ffffff" stroke="url(#glow-grad-lib)" stroke-width="6" stroke-linejoin="round" />
+        </g>
+      </svg>
       <div class="logo-title-wrapper">
         <div class="logo-title">${logoTitle}</div>
         <div class="logo-subtitle">API REST Client</div>

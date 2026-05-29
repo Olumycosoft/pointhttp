@@ -74,6 +74,13 @@ export function getDefaultStyle(): string {
       padding: 4px 8px;
     }
 
+    .logo-svg {
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 4px 12px var(--blue-glow));
+    }
+
     .logo-icon {
       width: 40px;
       height: 40px;
