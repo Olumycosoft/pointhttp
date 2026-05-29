@@ -154,17 +154,67 @@ Authorization: Bearer {{authToken}}
 ## 🛡️ Security Best Practices
 
 ### Custom Auth Gates
-Always protect your staging/production environments by attaching a `customAuth` check:
+
+To protect your staging or production environments, you can inject a `customAuth` check. Since PointHTTP is a completely independent library, it does not manage users or databases. Instead, it gives you a callback hook where you can run your own app's custom authentication logic using the standard Node/Express `req` and `res` objects.
+
+Here are the three most popular copy-paste security patterns you can use:
+
+#### Pattern A: Alphanumeric Secret Access Code (Super Lightweight! ⚡)
+Perfect for internal dev teams or QA testers. Access the portal by visiting `https://your-domain.com/docs/http?code=A89F2K8Z`.
 
 ```typescript
 playground({
+  modulesDir: path.join(process.cwd(), 'src/modules'),
+  customAuth: (req, res) => {
+    const accessCode = req.query?.code;
+    const SECRET_ACCESS_CODE = process.env.PLAYGROUND_ACCESS_CODE || 'A89F2K8Z';
+    
+    return accessCode === SECRET_ACCESS_CODE;
+  }
+})
+```
+
+#### Pattern B: JWT Cookie Verification (Seamless Security 🔐)
+If your application's client dashboard stores a session JWT inside cookies, the browser will automatically pass it when developers visit the playground.
+
+```typescript
+import * as jwt from 'jsonwebtoken';
+
+playground({
+  modulesDir: path.join(process.cwd(), 'src/modules'),
   customAuth: async (req, res) => {
-    // Perform authentication checks
-    const sessionToken = req.cookies?.session;
-    if (!sessionToken || !isValidSession(sessionToken)) {
-      return false; // Automatically returns 403 Forbidden
+    const token = req.cookies?.auth_token;
+    if (!token) return false; // Block access
+
+    try {
+      // Decode and verify the JWT with your app's secret
+      const payload = jwt.verify(token, process.env.JWT_SECRET) as any;
+      return payload.role === 'admin' || payload.role === 'developer';
+    } catch (err) {
+      return false; // Token expired or invalid
     }
-    return true; // Renders the portal
+  }
+})
+```
+
+#### Pattern C: JWT Query Parameter (For LocalStorage Apps 🌐)
+If your app stores JWTs in `localStorage` (which isn't sent in direct browser page requests), you can pass the token as a query parameter in the URL: `https://your-domain.com/docs/http?token=YOUR_JWT_HERE`.
+
+```typescript
+import * as jwt from 'jsonwebtoken';
+
+playground({
+  modulesDir: path.join(process.cwd(), 'src/modules'),
+  customAuth: async (req, res) => {
+    const token = req.query?.token;
+    if (!token) return false;
+
+    try {
+      jwt.verify(token, process.env.JWT_SECRET);
+      return true; // Valid token, show playground!
+    } catch (err) {
+      return false;
+    }
   }
 })
 ```
