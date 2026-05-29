@@ -1,6 +1,6 @@
 {
   "name": "pointhttp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An interactive, browser-based API playground and REST client for NestJS and Node.js applications.",
   "license": "MIT",
   "main": "./dist/index.js",

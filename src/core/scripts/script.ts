@@ -267,7 +267,7 @@ export function renderRESTClient(index: number, rawText: string) {
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
         const rows = Math.max(3, Math.min(15, bodyLines.length));
-        displayLines.push(`<div class="payload-editor-container" onclick="event.stopPropagation()"><div class="payload-editor-header"><span>Request Body (JSON)</span><span class="payload-editor-status">Editable</span></div><textarea class="payload-editor" id="payload-${index}-${currentReqId}" oninput="window.updateRequestPayload(${index}, ${currentReqId}, this.value)" rows="${rows}">${escapedBodyText}</textarea></div>`);
+        displayLines.push(`<div class="payload-editor-container" onclick="event.stopPropagation()"><div class="payload-editor-header"><span>Request Body (JSON)</span><span class="payload-editor-status">Editable</span></div><textarea class="payload-editor" id="payload-${index}-${currentReqId}" oninput="window.updateRequestPayload(${index}, ${currentReqId}, this.value)" rows="${rows}" spellcheck="false" autocapitalize="off" autocorrect="off">${escapedBodyText}</textarea></div>`);
       }
       inBody = false;
       bodyLines = [];
@@ -324,7 +324,7 @@ export function renderRESTClient(index: number, rawText: string) {
         req.queryParams.forEach((param: any, paramIdx: number) => {
           const escapedVal = escapeHtml(param.value);
           const escapedKey = escapeHtml(param.key);
-          rowsHtml += `<div class="query-param-row"><span class="query-param-key">${escapedKey}</span><span class="query-param-equals">=</span><input type="text" class="query-param-value-input" value="${escapedVal}" oninput="window.updateQueryParam(${index}, ${reqId}, ${paramIdx}, this.value)"></div>`;
+          rowsHtml += `<div class="query-param-row"><span class="query-param-key">${escapedKey}</span><span class="query-param-equals">=</span><input type="text" class="query-param-value-input" value="${escapedVal}" oninput="window.updateQueryParam(${index}, ${reqId}, ${paramIdx}, this.value)" spellcheck="false" autocapitalize="off" autocorrect="off"></div>`;
         });
 
         queryParamsHtml = `<div class="query-params-container" onclick="event.stopPropagation()"><div class="query-params-header"><span>Query Parameters</span><span class="query-params-status">Live Sync</span></div><div class="query-params-grid">${rowsHtml}</div></div>`;
@@ -392,7 +392,7 @@ export function renderVariablesEditor() {
     field.className = 'var-field';
     field.innerHTML = `
       <label class="var-label">{{${escapeHtml(key)}}}</label>
-      <input type="text" class="var-input" value="${escapeHtml(value)}" oninput="window.updateEnvVariable('${escapeHtml(key)}', this.value)">
+      <input type="text" class="var-input" value="${escapeHtml(value)}" oninput="window.updateEnvVariable('${escapeHtml(key)}', this.value)" spellcheck="false" autocapitalize="off" autocorrect="off">
     `;
     editor.appendChild(field);
   });
