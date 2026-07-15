@@ -21,10 +21,43 @@ declare global {
     copyContent: (textareaId: string, button: HTMLButtonElement) => void;
     switchSidebarTab: (tabId: 'docs' | 'snapshots') => void;
     toggleDrawer: (isOpen: boolean) => void;
+    setNavigationMode: (mode: 'single' | 'scroll') => void;
+    getSingleFileMode: () => boolean;
+    initNavigationMode: () => void;
+    updateDocVisibility: () => void;
   }
 }
 
 let defaultEnvVars: Record<string, string> = {};
+let storageNamespace = '';
+
+export function getStorageKey(baseKey: string): string {
+  if (storageNamespace) {
+    return `${baseKey}_${storageNamespace}`;
+  }
+  return baseKey;
+}
+
+export function safeGetStorageItem(key: string): string | null {
+  try {
+    return localStorage.getItem(getStorageKey(key));
+  } catch (e) {
+    console.error('Failed to get item from localStorage:', e);
+    return null;
+  }
+}
+
+export function safeSetStorageItem(key: string, value: string): void {
+  try {
+    localStorage.setItem(getStorageKey(key), value);
+  } catch (e) {
+    console.error('Failed to set item in localStorage:', e);
+    if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+      alert('PointHTTP Storage Warning: Browser local storage quota exceeded. Consider clearing some saved snapshots.');
+    }
+  }
+}
+
 const parsedFiles: Record<number, any> = {};
 let lastExecutedRequestDetail: any = null;
 let lastResponseRawText = '';
@@ -46,7 +79,7 @@ export function escapeHtml(str: string): string {
 }
 
 export function initEnvironmentVariables() {
-  const stored = localStorage.getItem('pointhttp_env_vars');
+  const stored = safeGetStorageItem('pointhttp_env_vars');
   let parsedStored = {};
   if (stored) {
     try {
@@ -59,7 +92,7 @@ export function initEnvironmentVariables() {
 }
 
 export function saveEnvironmentVariables() {
-  localStorage.setItem('pointhttp_env_vars', JSON.stringify(window.envVariables));
+  safeSetStorageItem('pointhttp_env_vars', JSON.stringify(window.envVariables));
 }
 
 export function parseRESTClientFile(text: string) {
@@ -473,20 +506,99 @@ export function toggleSection(index: number) {
   if (chevron) chevron.classList.toggle('collapsed');
 }
 
-export function handleSearch(query: string) {
-  const cleanQuery = query.toLowerCase().trim();
-  const navItems = document.querySelectorAll('.nav-item');
+export function getSingleFileMode(): boolean {
+  const mode = safeGetStorageItem('pointhttp_nav_mode');
+  return mode === 'single';
+}
+
+export function setNavigationMode(mode: 'single' | 'scroll') {
+  safeSetStorageItem('pointhttp_nav_mode', mode);
+  
+  const control = document.querySelector('.segmented-control');
+  const btnSingle = document.getElementById('btn-mode-single');
+  const btnScroll = document.getElementById('btn-mode-scroll');
+  
+  if (control && btnSingle && btnScroll) {
+    if (mode === 'single') {
+      control.classList.remove('scroll-mode');
+      btnSingle.classList.add('active');
+      btnScroll.classList.remove('active');
+    } else {
+      control.classList.add('scroll-mode');
+      btnSingle.classList.remove('active');
+      btnScroll.classList.add('active');
+    }
+  }
+
+  updateDocVisibility();
+  
+  if (mode === 'single') {
+    window.scrollTo({ top: 0 });
+  }
+}
+
+export function initNavigationMode() {
+  const isSingle = getSingleFileMode();
+  setNavigationMode(isSingle ? 'single' : 'scroll');
+}
+
+export function updateDocVisibility() {
+  const isSingle = getSingleFileMode();
+  const hash = window.location.hash || '';
+  let activeId = hash.replace('#', '');
+  
+  const queryInput = document.getElementById('search-docs') as HTMLInputElement;
+  const cleanQuery = queryInput ? queryInput.value.toLowerCase().trim() : '';
+
   const docSections = document.querySelectorAll('.doc-section');
+  
+  // Find first visible ID that matches search query as potential fallback
+  if (cleanQuery || !activeId) {
+    let firstVisibleId = '';
+    for (let i = 0; i < docSections.length; i++) {
+      const sec = docSections[i] as HTMLElement;
+      const filepath = (sec.getAttribute('data-filepath') || '').toLowerCase();
+      if (!cleanQuery || filepath.includes(cleanQuery)) {
+        if (!firstVisibleId) firstVisibleId = sec.id;
+        if (sec.id === activeId) {
+          break;
+        }
+      }
+    }
+    // If active ID is not valid/matching or is empty, use the first visible one
+    if (!activeId || !Array.from(docSections).some(s => s.id === activeId && (!cleanQuery || (s.getAttribute('data-filepath') || '').includes(cleanQuery)))) {
+      activeId = firstVisibleId;
+    }
+  }
 
+  docSections.forEach(sec => {
+    const filepath = (sec.getAttribute('data-filepath') || '').toLowerCase();
+    const isMatchedBySearch = !cleanQuery || filepath.includes(cleanQuery);
+    
+    if (isSingle) {
+      if (sec.id === activeId) {
+        (sec as HTMLElement).style.display = 'block';
+      } else {
+        (sec as HTMLElement).style.display = 'none';
+      }
+    } else {
+      (sec as HTMLElement).style.display = isMatchedBySearch ? 'block' : 'none';
+    }
+  });
+
+  const navItems = document.querySelectorAll('.nav-item');
   navItems.forEach(item => {
+    const href = item.getAttribute('href') || '';
     const filepath = (item.getAttribute('data-filepath') || '').toLowerCase();
-    (item as HTMLElement).style.display = filepath.includes(cleanQuery) ? 'flex' : 'none';
+    const isMatchedBySearch = !cleanQuery || filepath.includes(cleanQuery);
+    
+    (item as HTMLElement).style.display = isMatchedBySearch ? 'flex' : 'none';
+    item.classList.toggle('active', href === '#' + activeId);
   });
+}
 
-  docSections.forEach(section => {
-    const filepath = section.getAttribute('data-filepath') || '';
-    (section as HTMLElement).style.display = filepath.includes(cleanQuery) ? 'block' : 'none';
-  });
+export function handleSearch(query: string) {
+  updateDocVisibility();
 }
 
 export function jsonToHtml(value: any, key: string | null = null, isLast = true): string {
@@ -635,6 +747,8 @@ export async function executeRequest(fileIndex: number, reqId: number) {
   const resLatency = document.getElementById('res-latency');
   const resLoader = document.getElementById('res-loader');
   const resBodyWrapper = document.getElementById('res-body-wrapper');
+  const resTabsBar = document.getElementById('res-tabs-bar');
+  const resPrettyWrapper = document.getElementById('res-pretty-wrapper');
 
   if (drawerReqTitle) drawerReqTitle.innerText = request.title;
   if (statusBadge) {
@@ -644,6 +758,8 @@ export async function executeRequest(fileIndex: number, reqId: number) {
   if (resLatency) resLatency.innerText = '-- ms';
   if (resLoader) resLoader.style.display = 'flex';
   if (resBodyWrapper) resBodyWrapper.style.display = 'none';
+  if (resTabsBar) resTabsBar.style.display = 'none';
+  if (resPrettyWrapper) resPrettyWrapper.style.display = 'none';
 
   toggleDrawer(true);
 
@@ -891,7 +1007,7 @@ export async function saveResponseSnapshot() {
   };
 
   let snapshots = [];
-  const stored = localStorage.getItem('pointhttp_saved_snapshots');
+  const stored = safeGetStorageItem('pointhttp_saved_snapshots');
   if (stored) {
     try {
       snapshots = JSON.parse(stored);
@@ -901,7 +1017,7 @@ export async function saveResponseSnapshot() {
   }
 
   snapshots.unshift(newSnapshot);
-  localStorage.setItem('pointhttp_saved_snapshots', JSON.stringify(snapshots));
+  safeSetStorageItem('pointhttp_saved_snapshots', JSON.stringify(snapshots));
 
   renderSavedSnapshots();
   switchSidebarTab('snapshots');
@@ -928,7 +1044,7 @@ export function renderSavedSnapshots() {
   if (!container) return;
 
   let snapshots: any[] = [];
-  const stored = localStorage.getItem('pointhttp_saved_snapshots');
+  const stored = safeGetStorageItem('pointhttp_saved_snapshots');
   if (stored) {
     try {
       snapshots = JSON.parse(stored);
@@ -973,7 +1089,7 @@ export function renderSavedSnapshots() {
 
 export function loadResponseSnapshot(id: string) {
   let snapshots: any[] = [];
-  const stored = localStorage.getItem('pointhttp_saved_snapshots');
+  const stored = safeGetStorageItem('pointhttp_saved_snapshots');
   if (stored) {
     try {
       snapshots = JSON.parse(stored);
@@ -1057,7 +1173,7 @@ export async function deleteResponseSnapshot(event: Event, id: string) {
   if (!confirmDelete) return;
 
   let snapshots: any[] = [];
-  const stored = localStorage.getItem('pointhttp_saved_snapshots');
+  const stored = safeGetStorageItem('pointhttp_saved_snapshots');
   if (stored) {
     try {
       snapshots = JSON.parse(stored);
@@ -1067,7 +1183,7 @@ export async function deleteResponseSnapshot(event: Event, id: string) {
   }
 
   snapshots = snapshots.filter(s => s.id !== id);
-  localStorage.setItem('pointhttp_saved_snapshots', JSON.stringify(snapshots));
+  safeSetStorageItem('pointhttp_saved_snapshots', JSON.stringify(snapshots));
 
   renderSavedSnapshots();
 }
@@ -1117,10 +1233,10 @@ export function initDrawerResize() {
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
 
-    localStorage.setItem('pointhttp_drawer_width', drawer.style.width);
+    safeSetStorageItem('pointhttp_drawer_width', drawer.style.width);
   });
 
-  const savedWidth = localStorage.getItem('pointhttp_drawer_width');
+  const savedWidth = safeGetStorageItem('pointhttp_drawer_width');
   if (savedWidth) {
     drawer.style.width = savedWidth;
   }
@@ -1251,13 +1367,20 @@ if (typeof window !== 'undefined') {
     deleteResponseSnapshot,
     copyContent,
     switchSidebarTab,
-    bootstrapApplication
+    bootstrapApplication,
+    getSingleFileMode,
+    setNavigationMode,
+    initNavigationMode,
+    updateDocVisibility
   });
 }
 
 // --- RUNTIME BOOTSTRAP ENTRY POINT ---
-export function bootstrapApplication(incomingEnvVars: Record<string, string>) {
+export function bootstrapApplication(incomingEnvVars: Record<string, string>, namespace?: string) {
   defaultEnvVars = incomingEnvVars;
+  if (namespace) {
+    storageNamespace = namespace;
+  }
   initDrawerResize();
   initEnvironmentVariables();
   renderSavedSnapshots();
@@ -1270,16 +1393,45 @@ export function bootstrapApplication(incomingEnvVars: Record<string, string>) {
   });
 
   renderVariablesEditor();
+  
+  // Initialize navigation mode (Single File vs Continuous Scroll)
+  initNavigationMode();
+
+  window.addEventListener('hashchange', () => {
+    updateDocVisibility();
+    if (getSingleFileMode()) {
+      window.scrollTo({ top: 0 });
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const navItem = (e.target as HTMLElement).closest('.nav-item');
+    if (navItem) {
+      const href = navItem.getAttribute('href');
+      if (href && href.startsWith('#doc-')) {
+        if (getSingleFileMode()) {
+          const currentHash = window.location.hash || '';
+          if (currentHash === href) {
+            window.scrollTo({ top: 0 });
+          }
+        }
+      }
+    }
+  });
 
   window.addEventListener('scroll', () => {
+    if (getSingleFileMode()) return;
+    
     let curr = "";
     document.querySelectorAll('.doc-section').forEach(sec => {
-      if (window.pageYOffset >= (sec as HTMLElement).offsetTop - 250) {
+      if ((sec as HTMLElement).style.display !== 'none' && window.pageYOffset >= (sec as HTMLElement).offsetTop - 250) {
         curr = sec.getAttribute('id') || "";
       }
     });
-    document.querySelectorAll('.nav-item').forEach(item => {
-      item.classList.toggle('active', item.getAttribute('href') === '#' + curr);
-    });
+    if (curr) {
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.getAttribute('href') === '#' + curr);
+      });
+    }
   });
 }

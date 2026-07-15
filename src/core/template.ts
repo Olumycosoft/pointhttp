@@ -1,6 +1,7 @@
 import { PointHttpOptions } from '../types';
 import { getDefaultStyle } from './style';
 import { clientScriptRaw } from './scripts/script.generated';
+import * as crypto from 'crypto';
 
 function escapeHtml(str: string): string {
   if (!str) return '';
@@ -19,6 +20,14 @@ export function getHtmlTemplate(options: PointHttpOptions, files: Array<{ relati
   const hasCustomLogo = !!options.logoText;
   const customCss = options.customCss || '';
   const defaultEnvVars = JSON.stringify(options.envVariables || {});
+
+  // Generate a cryptographically unique project fingerprint hash based on options and current path
+  let projectFingerprint = (options.namespace || '').trim();
+  if (!projectFingerprint) {
+    const filePaths = files.map(f => f.relativePath).join(',');
+    const seed = `${options.title || ''}-${options.logoTitle || ''}-${filePaths}-${process.cwd()}`;
+    projectFingerprint = crypto.createHash('sha256').update(seed).digest('hex').substring(0, 16);
+  }
 
   let navItemsHtml = '';
   let docSectionsHtml = '';
@@ -112,6 +121,21 @@ export function getHtmlTemplate(options: PointHttpOptions, files: Array<{ relati
     <div class="search-wrapper">
       <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
       <input type="text" class="search-input" id="search-docs" placeholder="Search files & endpoints..." oninput="window.handleSearch(this.value)">
+    </div>
+
+    <div class="mode-toggle-container">
+      <div class="mode-toggle-label">Navigation Mode</div>
+      <div class="segmented-control">
+        <div class="segmented-slider" id="mode-slider"></div>
+        <button class="segmented-btn active" id="btn-mode-single" onclick="window.setNavigationMode('single')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+          Single File
+        </button>
+        <button class="segmented-btn" id="btn-mode-scroll" onclick="window.setNavigationMode('scroll')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          Continuous
+        </button>
+      </div>
     </div>
 
     <div class="sidebar-tabs">
@@ -242,7 +266,7 @@ export function getHtmlTemplate(options: PointHttpOptions, files: Array<{ relati
       ${clientScriptRaw}
       
       // Ignite entry initialization sequence
-      window.bootstrapApplication(${defaultEnvVars});
+      window.bootstrapApplication(${defaultEnvVars}, '${projectFingerprint}');
     })();
   </script>
 

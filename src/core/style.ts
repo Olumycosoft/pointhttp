@@ -1263,5 +1263,69 @@ export function getDefaultStyle(): string {
       background-color: rgba(30, 41, 59, 0.7);
       box-shadow: 0 0 4px var(--blue-glow);
     }
+
+    /* Segmented Navigation Mode Toggle */
+    .mode-toggle-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 0 4px;
+    }
+    .mode-toggle-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .segmented-control {
+      display: flex;
+      background: #090d16;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 2px;
+      position: relative;
+      user-select: none;
+    }
+    .segmented-slider {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      left: 2px;
+      width: calc(50% - 2px);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(139, 92, 246, 0.15));
+      border: 1px solid rgba(37, 99, 235, 0.3);
+      border-radius: 6px;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1;
+      pointer-events: none;
+    }
+    .segmented-control.scroll-mode .segmented-slider {
+      transform: translateX(100%);
+    }
+    .segmented-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: color 0.2s ease;
+      border-radius: 6px;
+    }
+    .segmented-btn:hover {
+      color: white;
+    }
+    .segmented-btn.active {
+      color: var(--blue-light);
+    }
   `;
 }

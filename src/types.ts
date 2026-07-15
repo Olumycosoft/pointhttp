@@ -63,4 +63,10 @@ export interface PointHttpOptions {
    * Accepts Express request and response. If returns false or throws, returns 403 Forbidden.
    */
   customAuth?: (req: any, res: any) => boolean | Promise<boolean>;
+
+  /**
+   * Optional custom namespace or project ID to isolate LocalStorage items (variables, snapshots, settings).
+   * If not provided, it is automatically derived from the scanned files and absolute directory path.
+   */
+  namespace?: string;
 }
